@@ -11101,8 +11101,8 @@ describe("runnerd provider runtime wiring", () => {
       state.createBackend.mock.calls.at(-1)![1].codexTransportFactory!();
       const options = state.createTransport.mock.calls.at(-1)![0];
       const expectedTools = kind === "codex" ? [{ name: "register_deliverable" }] : [];
-      expect(state.createBackend.mock.calls.at(-1)![1].dynamicTools).toEqual(expectedTools);
-      expect(options.resumeDynamicTools).toEqual(expectedTools);
+      expect(state.createBackend.mock.calls.at(-1)![1]).toMatchObject({ dynamicTools: expectedTools });
+      expect(options).toMatchObject({ resumeDynamicTools: expectedTools });
       expect(options).toMatchObject({ ...driver, runnerArtifact: { version: "fixture" },
         prpIdentity: { environmentLeaseId: "plugin-task-lease" } });
       if (kind === "acpx") expect(options).toMatchObject({ acpxAgent: "claude", claudeEffort: "high" });

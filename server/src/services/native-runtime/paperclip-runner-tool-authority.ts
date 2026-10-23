@@ -293,12 +293,6 @@ export class PaperclipRunnerToolAuthority {
                 ...descriptor.inputSchema,
                 properties: {
                   ...descriptor.inputSchema.properties,
-                  contentRef: {
-                    ...(descriptor.inputSchema.properties?.contentRef ?? {}),
-                    description: this.binding.readRemoteTaskFile
-                      ? "Path to the file on the execution host: workspace-relative or absolute within a location granted to this task, including its agent home."
-                      : "Path to the file relative to the task workspace.",
-                  },
                   filename: {
                     ...(descriptor.inputSchema.properties?.filename ?? {}),
                     description:
@@ -311,8 +305,9 @@ export class PaperclipRunnerToolAuthority {
                   },
                   contentRef: {
                     ...(descriptor.inputSchema.properties?.contentRef ?? {}),
-                    description:
-                      "Workspace-relative source path. Absolute paths, URLs, traversal, and symlinks are rejected.",
+                    description: this.binding.readRemoteTaskFile
+                      ? "Path to the file on the execution host: workspace-relative or absolute within a location granted to this task, including its agent home."
+                      : "Workspace-relative source path. Absolute paths, URLs, traversal, and symlinks are rejected.",
                   },
                 },
               }
