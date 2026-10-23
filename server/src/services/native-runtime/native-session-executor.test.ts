@@ -11074,6 +11074,7 @@ describe("runnerd provider runtime wiring", () => {
     const launcher = vi.fn();
     const registration = vi.fn();
     const driver = { prepareLaunch: vi.fn(), runnerProcessLauncher: launcher, controlPlaneRegistration: registration };
+    state.toolAuthorityDefinitions.mockImplementation(async binding => binding.readRemoteTaskFile ? [{ name: "register_deliverable" }] as never : []);
     const readWorkspaceFile = vi.fn(async () => Buffer.from("proof"));
     const owner = vi.spyOn(pluginTaskRuntime, "createPluginRunnerTaskOwner").mockReturnValue({ launcher, registration, driver, readWorkspaceFile });
     const task = vi.fn(async (operation: unknown) => {
@@ -11099,6 +11100,9 @@ describe("runnerd provider runtime wiring", () => {
       expect(state.createBackend.mock.calls.at(-1)![1]).toMatchObject({ workingDirectoryAuthority: "runner_prepared_launch", environment: {} });
       state.createBackend.mock.calls.at(-1)![1].codexTransportFactory!();
       const options = state.createTransport.mock.calls.at(-1)![0];
+      const expectedTools = kind === "codex" ? [{ name: "register_deliverable" }] : [];
+      expect(state.createBackend.mock.calls.at(-1)![1].dynamicTools).toEqual(expectedTools);
+      expect(options.resumeDynamicTools).toEqual(expectedTools);
       expect(options).toMatchObject({ ...driver, runnerArtifact: { version: "fixture" },
         prpIdentity: { environmentLeaseId: "plugin-task-lease" } });
       if (kind === "acpx") expect(options).toMatchObject({ acpxAgent: "claude", claudeEffort: "high" });
@@ -11108,15 +11112,15 @@ describe("runnerd provider runtime wiring", () => {
       expect(task.mock.calls).toEqual([[{ kind: "describe" }]]);
       const binding = state.toolAuthorityDefinitions.mock.calls.at(-1)![0] as unknown as {
         readRemoteApiFile?: (path: string, maxBytes: number) => Promise<Buffer>;
-        readRemoteWorkspaceFile?: (file: {contentRef: string;byteSize: number;sha256: string}) => Promise<Buffer>;
+        readRemoteTaskFile?: (file: {contentRef: string;byteSize: number;sha256: string}) => Promise<Buffer>;
       };
       if (kind === "codex") {
         await expect(binding.readRemoteApiFile!("proof.txt",1024)).resolves.toEqual(Buffer.from("proof"));
-        await expect(binding.readRemoteWorkspaceFile!({contentRef:"proof.txt",byteSize:5,sha256:"a".repeat(64)})).resolves.toEqual(Buffer.from("proof"));
+        await expect(binding.readRemoteTaskFile!({contentRef:"proof.txt",byteSize:5,sha256:"a".repeat(64)})).resolves.toEqual(Buffer.from("proof"));
         expect(readWorkspaceFile).toHaveBeenCalledWith("proof.txt",5);
       } else {
         expect(binding.readRemoteApiFile).toBeUndefined();
-        expect(binding.readRemoteWorkspaceFile).toBeUndefined();
+        expect(binding.readRemoteTaskFile).toBeUndefined();
       }
       expect(owner.mock.calls.at(-1)![0]).not.toHaveProperty("assets");
       const identity: Record<string, unknown> = options.prpIdentity!;

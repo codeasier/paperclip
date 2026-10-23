@@ -2,9 +2,9 @@ import { z } from "zod";
 import type { PluginEnvironmentDriverBaseParams, PluginEnvironmentLease } from "./protocol.js";
 
 export const MAX_ENVIRONMENT_TASK_FILE_BYTES = 10 * 1024 * 1024;
-const workspacePath = z.string().min(1).max(2000).refine(value =>
-  !/[\\\u0000-\u001f\u007f]/u.test(value) && !value.startsWith("/") && !/^[a-z][a-z0-9+.-]*:/iu.test(value) &&
-  value.split("/").every(part => part !== "" && part !== "." && part !== ".."), "Expected a relative workspace file path");
+const taskFilePath = z.string().min(1).max(2000).refine(value =>
+  !/[\\\u0000-\u001f\u007f]/u.test(value) && !/^[a-z][a-z0-9+.-]*:/iu.test(value) &&
+  value.replace(/^\//u, "").split("/").every(part => part !== "" && part !== "." && part !== ".."), "Expected a canonical task file path");
 // Provider IDs are opaque; providers validate their own addressing constraints.
 const providerId = z.string().min(1);
 // PRP identity.schema.json stableId.
@@ -90,7 +90,7 @@ export const environmentTaskOperationSchema = z.discriminatedUnion("kind", [
     provider: identifier, projectIds: z.array(z.string().uuid()).max(64)
       .refine(ids => new Set(ids).size === ids.length, "Duplicate project IDs") }).strict(),
   z.object({ kind: z.literal("read_file"), identity: durableIdentity,
-    path: workspacePath, maxBytes: z.number().int().positive().max(MAX_ENVIRONMENT_TASK_FILE_BYTES),
+    path: taskFilePath, maxBytes: z.number().int().positive().max(MAX_ENVIRONMENT_TASK_FILE_BYTES),
     projectIds: z.array(z.string().uuid()).max(64).refine(ids => new Set(ids).size === ids.length, "Duplicate project IDs"),
   }).strict(),
   z.object({ kind: z.literal("read_state"), identity: durableIdentity, resumeFrom: providerId.optional() }).strict(),

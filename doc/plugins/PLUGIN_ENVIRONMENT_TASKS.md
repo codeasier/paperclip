@@ -39,7 +39,7 @@ See [the schemas](../../packages/plugins/sdk/src/environment-tasks.ts) for all f
 | `connection` | `connection` | Return an authenticated WSS endpoint and its generation. |
 | `status` | `status` | Report the phase and observed process termination. |
 | `check_project_auth` | `project_auth` | Validate the prepared project configuration before managed credential transfer. |
-| `read_file` | `file` | Read one bounded, workspace-relative file from the active task. |
+| `read_file` | `file` | Read one bounded, task-scoped file from the active task. |
 | `read_state` | `state` | Read the exact retained Runner checkpoint. |
 | `archive_state` | `state` | Archive suspended authority with an idempotent archive key. Keep provider session files. |
 | `credentials` | `credentials` | Return the selected account after process termination. |
@@ -226,9 +226,11 @@ remain stable: a later preparation downloads the same verified files again.
 Core uses `read_file` for `call_api` file uploads and `register_deliverable`
 when a plugin owns execution and advertises `workspaceFileReadVersion: 1` in
 `describe`. The request includes the submitted Runner identity,
-validated project IDs, a relative path, and a byte limit (at most 10 MiB).
-The provider derives the root from its saved task preparation; callers cannot
-select an absolute path or another task's workspace.
+validated project IDs, a canonical relative or absolute path, and a byte limit (at most 10 MiB).
+The provider resolves paths within locations granted to the active task. Relative
+paths resolve from its prepared workspace. Absolute paths can select another
+granted location such as agent home, but never a supervisor path or another
+agent's files. Core does not prescribe provider filesystem layout.
 
 The provider must reject inactive tasks, path escapes, symlinks, hard links,
 non-regular files, protected credentials, oversized files, and files that change

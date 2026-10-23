@@ -179,6 +179,7 @@ type Binding = {
   assertBridgeAuthority?: (database?: Db) => Promise<void>;
   executionTargetKind?: "local" | "remote";
   readRemoteWorkspaceFile?: RemoteWorkspaceFileReader;
+  readRemoteTaskFile?: RemoteWorkspaceFileReader;
   readRemoteApiFile?: (path: string, maxBytes: number) => Promise<Buffer>;
   currentWakeComments?: CurrentWakeCommentsBinding;
   chatAttachmentReadScope?: NativeChatAttachmentReadScope;
@@ -279,7 +280,7 @@ export class PaperclipRunnerToolAuthority {
           descriptor.allowedModes.includes(workMode) &&
           (descriptor.operationId !== "register_deliverable" ||
             (Boolean(this.binding.workspaceRoot) &&
-              ((this.binding.executionTargetKind ?? "local") === "local" || Boolean(this.binding.readRemoteWorkspaceFile)))),
+              ((this.binding.executionTargetKind ?? "local") === "local" || Boolean(this.binding.readRemoteWorkspaceFile || this.binding.readRemoteTaskFile)))),
       ).map((descriptor) => ({
         name: descriptor.operationId,
         description:
@@ -292,6 +293,12 @@ export class PaperclipRunnerToolAuthority {
                 ...descriptor.inputSchema,
                 properties: {
                   ...descriptor.inputSchema.properties,
+                  contentRef: {
+                    ...(descriptor.inputSchema.properties?.contentRef ?? {}),
+                    description: this.binding.readRemoteTaskFile
+                      ? "Path to the file on the execution host: workspace-relative or absolute within a location granted to this task, including its agent home."
+                      : "Path to the file relative to the task workspace.",
+                  },
                   filename: {
                     ...(descriptor.inputSchema.properties?.filename ?? {}),
                     description:
@@ -1949,6 +1956,7 @@ export class PaperclipRunnerToolAuthority {
             workspaceRoot,
             executionTargetKind: this.binding.executionTargetKind ?? "local",
             readRemoteWorkspaceFile: this.binding.readRemoteWorkspaceFile,
+            readRemoteTaskFile: this.binding.readRemoteTaskFile,
           },
           deliverable: {
             filename: typeof input.filename === "string" ? input.filename : "",

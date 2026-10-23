@@ -109,7 +109,7 @@ describe("plugin-provided Runner execution", () => {
     value.lease.expiresAt=null;
     workers.call.mockImplementation(async()=>{value.run!.status="cancelled";return result;});
     await expect(executeEnvironmentTask(database(value).db,workers as never,{companyId:"company",leaseId,operation})).rejects.toThrow("operation unavailable");
-    for(const path of ["/etc/passwd","../escape","a/../b","a\\b","https://example.test/file"]) expect(environmentTaskOperationSchema.safeParse({...operation,path}).success).toBe(false);
+    for(const path of ["//etc/passwd","../escape","a/../b","a\\b","https://example.test/file"]) expect(environmentTaskOperationSchema.safeParse({...operation,path}).success).toBe(false);
     expect(environmentTaskOperationSchema.safeParse({...operation,maxBytes:11*1024*1024}).success).toBe(false);
     expect(()=>parseEnvironmentTaskResult(operation,"attempt-1",{...result,taskId:"other"})).toThrow();
   });

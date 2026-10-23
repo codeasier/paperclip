@@ -11815,7 +11815,8 @@ async function createRunnerdBackendWithinSessionClaim(
     });
     if (description.workspaceFileReadVersion === 1) {
       authority.binding.readRemoteApiFile = owner.readWorkspaceFile;
-      authority.binding.readRemoteWorkspaceFile = file => owner.readWorkspaceFile(file.contentRef, file.byteSize);
+      authority.binding.readRemoteTaskFile = file => owner.readWorkspaceFile(file.contentRef, file.byteSize);
+      dynamicTools = await authorityEpoch.definitions();
     }
     const executeTool = (call: Parameters<SessionToolAuthorityEpoch["execute"]>[0]) => {
       const current = sessionToolAuthorityEpochs.get(sessionScopeId);

@@ -292,8 +292,9 @@ describe("plugin task workspace file transfer", () => {
     const handle=owner.launcher(launchSpec());registration.activate();await registration.ready();
     try {
       await expect(owner.readWorkspaceFile("proof.txt",1024)).resolves.toEqual(bytes);
+      await expect(owner.readWorkspaceFile("/home/agent/proof.txt",1024)).resolves.toEqual(bytes);
       expect(task.mock.calls.find(([op])=>op.kind==="read_file")?.[0]).toMatchObject({identity:requirements.identity,path:"proof.txt",projectIds:[]});
-      for(const path of ["../escape","/etc/passwd","file:/secret","a/../b","a\\b"]) await expect(owner.readWorkspaceFile(path,1024)).rejects.toThrow();
+      for(const path of ["../escape","//etc/passwd","file:/secret","a/../b","a\\b"]) await expect(owner.readWorkspaceFile(path,1024)).rejects.toThrow();
       await expect(owner.readWorkspaceFile("proof.txt",1)).rejects.toThrow("unavailable");
       file={...file,sha256:"f".repeat(64)};
       await expect(owner.readWorkspaceFile("proof.txt",1024)).rejects.toThrow("integrity");
