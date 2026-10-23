@@ -179,6 +179,7 @@ type Binding = {
   assertBridgeAuthority?: (database?: Db) => Promise<void>;
   executionTargetKind?: "local" | "remote";
   readRemoteWorkspaceFile?: RemoteWorkspaceFileReader;
+  readRemoteApiFile?: (path: string, maxBytes: number) => Promise<Buffer>;
   currentWakeComments?: CurrentWakeCommentsBinding;
   chatAttachmentReadScope?: NativeChatAttachmentReadScope;
   syncIssueExternalObjects?: (issueId: string) => Promise<void>;
@@ -1164,6 +1165,14 @@ export class PaperclipRunnerToolAuthority {
       } finally { object.stream.destroy(); }
       await assertArtifactAccess();
       return { bytes: Buffer.concat(chunks), filename: asset.originalFilename ?? "file", contentType: asset.contentType };
+    }
+    if (this.binding.executionTargetKind === "remote") {
+      if (!this.binding.readRemoteApiFile) throw badRequest("Remote workspace file uploads are unavailable for this execution provider");
+      await this.#boundContext();
+      const bytes = await this.binding.readRemoteApiFile(file.path!, RUNNER_API_MAX_BYTES);
+      await this.#boundContext();
+      if (bytes.length > RUNNER_API_MAX_BYTES) throw badRequest("Workspace file exceeds API transfer limit");
+      return { bytes, filename: basename(file.path!), contentType: "application/octet-stream" };
     }
     const resolved = await workspaceFileResourceService(this.db).prepareDownload(this.binding.issueId, { path: file.path!, workspace: "auto" });
     const handle = await openRunnerApiWorkspaceFile(resolved.realPath);

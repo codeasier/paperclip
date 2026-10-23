@@ -11813,6 +11813,10 @@ async function createRunnerdBackendWithinSessionClaim(
           .where(and(eq(environmentLeases.id, remoteTarget.leaseId!), eq(environmentLeases.companyId, input.execution.binding.companyId)));
       }, onDispatched: input.onTaskDispatched,
     });
+    if (description.workspaceFileReadVersion === 1) {
+      authority.binding.readRemoteApiFile = owner.readWorkspaceFile;
+      authority.binding.readRemoteWorkspaceFile = file => owner.readWorkspaceFile(file.contentRef, file.byteSize);
+    }
     const executeTool = (call: Parameters<SessionToolAuthorityEpoch["execute"]>[0]) => {
       const current = sessionToolAuthorityEpochs.get(sessionScopeId);
       if (!current) throw new Error("native_session_tool_authority_unavailable");
